@@ -3,7 +3,7 @@ const state = {
   dateOffset: 0,
   selectedDate: null,
   filter: "all",
-  leagueFilter: "all",   // "all" أو اسم الدوري الإنجليزي
+  leagueFilter: "big",   // "big" = الدوريات الخمسة الكبرى + الأبطال (افتراضي) | "all" | اسم دوري محدد
   matches: [],
   timer: null,
   clockTimer: null
@@ -69,23 +69,34 @@ function matchGroup(match) {
   return "upcoming";
 }
 
-/* ===== شريط الدوريات الخمسة الكبرى ===== */
+// أسماء الدوريات الخمسة الكبرى + دوري الأبطال (للمطابقة مع الـ API)
+const BIG_LEAGUE_NAMES = CONFIG.BIG_LEAGUES.map(l => l.name);
+
+/* ===== شريط الدوريات ===== */
 function buildLeagueBar() {
   leagueBarEl.innerHTML = "";
 
-  const allBtn = document.createElement("button");
-  allBtn.className = "league-chip active";
-  allBtn.dataset.league = "all";
-  allBtn.innerHTML = `<span class="chip-icon">⚽</span>كل الدوريات`;
-  leagueBarEl.appendChild(allBtn);
+  // زر "الكبرى" (افتراضي)
+  const bigBtn = document.createElement("button");
+  bigBtn.className = "league-chip active";
+  bigBtn.dataset.league = "big";
+  bigBtn.innerHTML = `⭐ الدوريات الكبرى`;
+  leagueBarEl.appendChild(bigBtn);
 
   CONFIG.BIG_LEAGUES.forEach(l => {
     const btn = document.createElement("button");
     btn.className = "league-chip";
     btn.dataset.league = l.name;
-    btn.innerHTML = `<span class="chip-icon">${l.icon}</span> ${l.ar}`;
+    btn.innerHTML = `<img class="chip-badge" src="${l.flagUrl}" alt=""> ${l.ar}`;
     leagueBarEl.appendChild(btn);
   });
+
+  // زر "كل الدوريات"
+  const allBtn = document.createElement("button");
+  allBtn.className = "league-chip";
+  allBtn.dataset.league = "all";
+  allBtn.innerHTML = `<span class="chip-icon">⚽</span> كل الدوريات`;
+  leagueBarEl.appendChild(allBtn);
 
   leagueBarEl.addEventListener("click", (e) => {
     const chip = e.target.closest(".league-chip");
@@ -180,8 +191,13 @@ function render() {
 
   let list = state.matches;
 
-  // فلتر الدوري (الدوريات الكبرى)
-  if (state.leagueFilter !== "all") {
+  // فلتر الدوري:
+  // "big"  -> الدوريات الخمسة الكبرى + دوري الأبطال فقط
+  // "all"  -> جميع البطولات
+  // اسم    -> دوري واحد محدد
+  if (state.leagueFilter === "big") {
+    list = list.filter(m => BIG_LEAGUE_NAMES.includes(m.league));
+  } else if (state.leagueFilter !== "all") {
     list = list.filter(m => m.league === state.leagueFilter);
   }
 
@@ -193,8 +209,8 @@ function render() {
   emptyEl.hidden = list.length > 0;
   matchesEl.innerHTML = "";
 
-  if (state.leagueFilter === "all") {
-    // تجميع حسب البطولة
+  if (state.leagueFilter === "all" || state.leagueFilter === "big") {
+    // تجميع حسب البطولة (بترتيب الكبرى أولاً)
     const groups = {};
     list.forEach(m => (groups[m.league] = groups[m.league] || []).push(m));
     const names = Object.keys(groups).sort((a, b) =>
@@ -216,7 +232,7 @@ function render() {
       matchesEl.appendChild(section);
     }
   } else {
-    // عرض مباشر عند اختيار دوري محدد
+    // دوري محدد: عرض مباشر بدون تجميع
     list.forEach(m => matchesEl.appendChild(matchCard(m)));
   }
 }
