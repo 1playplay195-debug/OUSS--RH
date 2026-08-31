@@ -23,13 +23,14 @@ const CONFIG = {
   ],
 
   // الدوريات الخمسة الكبرى + دوري أبطال أوروبا (بالاسم كما يرد من الـ API)
+  // Flags بصور آمنة من CDN بدلاً من إيموجي الأحرف المخفية
   BIG_LEAGUES: [
-    { name: "English Premier League", ar: "الدوري الإنجليزي", icon: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
-    { name: "Spanish La Liga",        ar: "الدوري الإسباني",  icon: "🇪🇸" },
-    { name: "Italian Serie A",        ar: "الدوري الإيطالي",  icon: "🇮🇹" },
-    { name: "German Bundesliga",      ar: "الدوري الألماني",  icon: "🇩🇪" },
-    { name: "French Ligue 1",         ar: "الدوري الفرنسي",   icon: "🇫🇷" },
-    { name: "UEFA Champions League",  ar: "دوري الأبطال",     icon: "🏆" }
+    { name: "English Premier League", ar: "الدوري الإنجليزي",   flagUrl: "https://flagcdn.com/w40/gb-eng.png" },
+    { name: "Spanish La Liga",        ar: "الدوري الإسباني",     flagUrl: "https://flagcdn.com/w40/es.png" },
+    { name: "Italian Serie A",        ar: "الدوري الإيطالي",     flagUrl: "https://flagcdn.com/w40/it.png" },
+    { name: "German Bundesliga",      ar: "الدوري الألماني",     flagUrl: "https://flagcdn.com/w40/de.png" },
+    { name: "French Ligue 1",         ar: "الدوري الفرنسي",      flagUrl: "https://flagcdn.com/w40/fr.png" },
+    { name: "UEFA Champions League",  ar: "دوري أبطال أوروبا",   flagUrl: "https://flagcdn.com/w40/eu.png" }
   ],
 
   // تسميات عربية للبطولات الشائعة (اختياري)
