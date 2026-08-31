@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>نتائج المباريات | الترتيب والمباريات ببساطة</title>
+  <meta name="description" content="نتائج ومواعيد مباريات اليوم مباشرة بالعربية" />
+  <meta name="theme-color" content="#0b1220" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <a class="logo" href="./">
+        <span class="logo-icon">⚽</span>
+        <span class="logo-text">نتائج</span>
+      </a>
+      <nav class="nav">
+        <button id="installBtn" class="btn-install" hidden title="تثبيت التطبيق">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+          تحميل التطبيق
+        </button>
+        <button id="installIosBtn" class="btn-install" hidden title="إضافة للشاشة الرئيسية">إضافة إلى الشاشة الرئيسية</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- شريط التواريخ -->
+    <section class="datebar" aria-label="اختيار التاريخ">
+      <button class="date-btn" data-day="-1">أمس</button>
+      <button class="date-btn active" data-day="0">اليوم</button>
+      <button class="date-btn" data-day="1">غداً</button>
+      <input type="date" id="datePicker" aria-label="اختر تاريخاً" />
+    </section>
+
+    <!-- فلاتر الحالة -->
+    <section class="filters" role="tablist">
+      <button class="filter active" data-filter="all">الكل</button>
+      <button class="filter" data-filter="live"><span class="live-dot"></span>مباشر</button>
+      <button class="filter" data-filter="finished">انتهت</button>
+      <button class="filter" data-filter="upcoming">لم تبدأ</button>
+      <span id="lastUpdate" class="last-update"></span>
+    </section>
+
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <p>جاري تحميل المباريات…</p>
+    </div>
+
+    <div id="error" class="error" hidden>
+      <p>⚠️ تعذر تحميل المباريات، سيتم عرض آخر بيانات محفوظة إن وجدت.</p>
+      <button id="retryBtn" class="btn-install">إعادة المحاولة</button>
+    </div>
+
+    <!-- قائمة المباريات -->
+    <section id="matches" class="matches"></section>
+
+    <div id="empty" class="empty" hidden>
+      <p>لا توجد مباريات مطابقة في هذا اليوم.</p>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>جميع التوقيتات حسب توقيت جهازك</p>
+    <p>© 2026 نتائج المباريات</p>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+  <script>
+    // تسجيل Service Worker لدعم العمل بدون إنترنت والتثبيت
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
