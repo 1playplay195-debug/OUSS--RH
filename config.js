@@ -1,7 +1,7 @@
 // ===== إعدادات الموقع العامة =====
 const CONFIG = {
-  // TheSportsDB - API مجاني للمباريات (المفتاح التجريبي "123" مجاني للاستخدام)
-  // يمكنك التسجيل مجاناً للحصول على مفتاح خاص: https://www.thesportsdb.com/register
+  // TheSportsDB - API مجاني للمباريات (المفتاح التجريبي "123")
+  // سجل مجاناً للحصول على مفتاح خاص: https://www.thesportsdb.com/register
   API_BASE: "https://www.thesportsdb.com/api/v1/json/123",
   SPORT: "Soccer",
 
@@ -20,6 +20,16 @@ const CONFIG = {
     "Egyptian Premier League",
     "CAF Champions League",
     "AFC Champions League"
+  ],
+
+  // الدوريات الخمسة الكبرى + دوري أبطال أوروبا (بالاسم كما يرد من الـ API)
+  BIG_LEAGUES: [
+    { name: "English Premier League", ar: "الدوري الإنجليزي", icon: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
+    { name: "Spanish La Liga",        ar: "الدوري الإسباني",  icon: "🇪🇸" },
+    { name: "Italian Serie A",        ar: "الدوري الإيطالي",  icon: "🇮🇹" },
+    { name: "German Bundesliga",      ar: "الدوري الألماني",  icon: "🇩🇪" },
+    { name: "French Ligue 1",         ar: "الدوري الفرنسي",   icon: "🇫🇷" },
+    { name: "UEFA Champions League",  ar: "دوري الأبطال",     icon: "🏆" }
   ],
 
   // تسميات عربية للبطولات الشائعة (اختياري)
