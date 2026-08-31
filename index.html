@@ -48,6 +48,9 @@
       <span id="lastUpdate" class="last-update"></span>
     </section>
 
+    <!-- شريط الدوريات الخمسة الكبرى + دوري الأبطال -->
+    <section class="leaguebar" id="leagueBar" aria-label="اختيار الدوري"></section>
+
     <div id="loading" class="loading">
       <div class="spinner"></div>
       <p>جاري تحميل المباريات…</p>
@@ -74,7 +77,6 @@
   <script src="config.js"></script>
   <script src="script.js"></script>
   <script>
-    // تسجيل Service Worker لدعم العمل بدون إنترنت والتثبيت
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').catch(() => {});
