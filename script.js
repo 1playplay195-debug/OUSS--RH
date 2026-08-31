@@ -3,6 +3,7 @@ const state = {
   dateOffset: 0,
   selectedDate: null,
   filter: "all",
+  leagueFilter: "all",   // "all" أو اسم الدوري الإنجليزي
   matches: [],
   timer: null,
   clockTimer: null
@@ -14,6 +15,7 @@ const loadingEl    = $("#loading");
 const errorEl      = $("#error");
 const emptyEl      = $("#empty");
 const lastUpdateEl = $("#lastUpdate");
+const leagueBarEl  = $("#leagueBar");
 
 /* ===== أدوات مساعدة ===== */
 function pad(n) { return String(n).padStart(2, "0"); }
@@ -40,7 +42,6 @@ function formatTime(timestamp) {
   return `${h}:${m} ${period}`;
 }
 
-// وقت نسبي: "بعد ساعة و27 دقيقة" / "قبل 20 دقيقة"
 function relativeTime(ts) {
   if (!ts) return "";
   const diff = ts - Date.now();
@@ -66,6 +67,34 @@ function matchGroup(match) {
   if (isLive(match.status)) return "live";
   if (["FT", "AET", "PEN", "AWD", "WO"].includes(match.status)) return "finished";
   return "upcoming";
+}
+
+/* ===== شريط الدوريات الخمسة الكبرى ===== */
+function buildLeagueBar() {
+  leagueBarEl.innerHTML = "";
+
+  const allBtn = document.createElement("button");
+  allBtn.className = "league-chip active";
+  allBtn.dataset.league = "all";
+  allBtn.innerHTML = `<span class="chip-icon">⚽</span>كل الدوريات`;
+  leagueBarEl.appendChild(allBtn);
+
+  CONFIG.BIG_LEAGUES.forEach(l => {
+    const btn = document.createElement("button");
+    btn.className = "league-chip";
+    btn.dataset.league = l.name;
+    btn.innerHTML = `<span class="chip-icon">${l.icon}</span> ${l.ar}`;
+    leagueBarEl.appendChild(btn);
+  });
+
+  leagueBarEl.addEventListener("click", (e) => {
+    const chip = e.target.closest(".league-chip");
+    if (!chip) return;
+    leagueBarEl.querySelectorAll(".league-chip").forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+    state.leagueFilter = chip.dataset.league;
+    render();
+  });
 }
 
 /* ===== جلب البيانات ===== */
@@ -95,12 +124,10 @@ async function fetchMatches() {
 }
 
 function mapEvent(e) {
-  // نحسب الطابع الزمني من strTimestamp إن وجد وإلا من التاريخ والوقت
   let ts = null;
   if (e.strTimestamp) ts = new Date(e.strTimestamp).getTime();
   else if (e.dateEvent) {
     const t = e.strTime || "00:00:00";
-    // بعض السجلات يكون الوقت بتوقيت UTC بصيغة 19:30:00
     ts = new Date(`${e.dateEvent}T${t}`).getTime();
   }
 
@@ -152,6 +179,13 @@ function render() {
   loadingEl.hidden = true;
 
   let list = state.matches;
+
+  // فلتر الدوري (الدوريات الكبرى)
+  if (state.leagueFilter !== "all") {
+    list = list.filter(m => m.league === state.leagueFilter);
+  }
+
+  // فلتر الحالة
   if (state.filter !== "all") {
     list = list.filter(m => matchGroup(m) === state.filter);
   }
@@ -159,7 +193,8 @@ function render() {
   emptyEl.hidden = list.length > 0;
   matchesEl.innerHTML = "";
 
-  if (state.filter === "all") {
+  if (state.leagueFilter === "all") {
+    // تجميع حسب البطولة
     const groups = {};
     list.forEach(m => (groups[m.league] = groups[m.league] || []).push(m));
     const names = Object.keys(groups).sort((a, b) =>
@@ -181,6 +216,7 @@ function render() {
       matchesEl.appendChild(section);
     }
   } else {
+    // عرض مباشر عند اختيار دوري محدد
     list.forEach(m => matchesEl.appendChild(matchCard(m)));
   }
 }
@@ -301,6 +337,7 @@ window.addEventListener("appinstalled", () => {
 });
 
 /* ===== التشغيل ===== */
+buildLeagueBar();
 load();
 state.timer = setInterval(load, CONFIG.REFRESH_INTERVAL);
 state.clockTimer = setInterval(tickRelativeTimes, 60000);
