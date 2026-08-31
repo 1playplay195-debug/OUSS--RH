@@ -1,7 +1,7 @@
 /* ===== حالة التطبيق ===== */
 const state = {
-  dateOffset: 0,          // -1 أمس / 0 اليوم / 1 غداً
-  selectedDate: null,     // تاريخ مخصص من منتقي التاريخ
+  dateOffset: 0,
+  selectedDate: null,
   filter: "all",
   matches: [],
   timer: null,
@@ -9,10 +9,10 @@ const state = {
 };
 
 const $ = (sel) => document.querySelector(sel);
-const matchesEl   = $("#matches");
-const loadingEl   = $("#loading");
-const errorEl     = $("#error");
-const emptyEl     = $("#empty");
+const matchesEl    = $("#matches");
+const loadingEl    = $("#loading");
+const errorEl      = $("#error");
+const emptyEl      = $("#empty");
 const lastUpdateEl = $("#lastUpdate");
 
 /* ===== أدوات مساعدة ===== */
@@ -29,8 +29,9 @@ function currentDate() {
   return d;
 }
 
-function formatTime(dateStr) {
-  const d = new Date(dateStr);
+function formatTime(timestamp) {
+  if (!timestamp) return "--:--";
+  const d = new Date(timestamp);
   if (isNaN(d)) return "--:--";
   let h = d.getHours();
   const m = pad(d.getMinutes());
@@ -39,9 +40,10 @@ function formatTime(dateStr) {
   return `${h}:${m} ${period}`;
 }
 
-// وقت نسبي مثل: "بعد ساعة و27 دقيقة" / "قبل 20 دقيقة"
-function relativeTime(dateStr) {
-  const diff = new Date(dateStr) - new Date();
+// وقت نسبي: "بعد ساعة و27 دقيقة" / "قبل 20 دقيقة"
+function relativeTime(ts) {
+  if (!ts) return "";
+  const diff = ts - Date.now();
   const abs = Math.abs(diff);
   const mins = Math.round(abs / 60000);
   const hours = Math.floor(mins / 60);
@@ -63,8 +65,7 @@ function isLive(status) {
 function matchGroup(match) {
   if (isLive(match.status)) return "live";
   if (["FT", "AET", "PEN", "AWD", "WO"].includes(match.status)) return "finished";
-  if (match.status === "NS" || !match.status) return "upcoming";
-  return "other";
+  return "upcoming";
 }
 
 /* ===== جلب البيانات ===== */
@@ -83,31 +84,38 @@ async function fetchMatches() {
       ts: Date.now(), date: d, matches: state.matches
     }));
     errorEl.hidden = true;
-reg`  } catch (err) {
+  } catch (err) {
     console.warn("تعذر الجلب من الـ API:", err);
     loadFromCache(d);
   }
 
   render();
   const now = new Date();
-  lastUpdate.textContent = `آخر تحديث: ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  lastUpdateEl.textContent = `آخر تحديث: ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 }
 
 function mapEvent(e) {
+  // نحسب الطابع الزمني من strTimestamp إن وجد وإلا من التاريخ والوقت
+  let ts = null;
+  if (e.strTimestamp) ts = new Date(e.strTimestamp).getTime();
+  else if (e.dateEvent) {
+    const t = e.strTime || "00:00:00";
+    // بعض السجلات يكون الوقت بتوقيت UTC بصيغة 19:30:00
+    ts = new Date(`${e.dateEvent}T${t}`).getTime();
+  }
+
   return {
     id: e.idEvent,
     league: e.strLeague || "مباريات",
     leagueBadge: e.strLeagueBadge || "",
     home: e.strHomeTeam || "—",
     away: e.strAwayTeam || "—",
-    homeBadge: e.strHomeTeamBadge || e.strHomeTeamBadge || "",
+    homeBadge: e.strHomeTeamBadge || "",
     awayBadge: e.strAwayTeamBadge || "",
     homeScore: e.intHomeScore,
     awayScore: e.intAwayScore,
     status: (e.strStatus || "NS").toUpperCase(),
-    time: e.strTime || e.dateEvent + "T00:00:00",
-    dateEvent: e.dateEvent,
-    timestamp: e.strTimestamp ? new Date(e.strTimestamp).getTime() : null
+    timestamp: ts
   };
 }
 
@@ -129,9 +137,6 @@ function loadFromCache(dateStr) {
     if (cached && cached.date === dateStr) {
       state.matches = cached.matches;
       errorEl.hidden = true;
-    } else if (cached && Date.now() - cached.ts < CONFIG.CACHE_TTL) {
-      state.matches = cached.matches;
-      errorEl.hidden = false;
     } else {
       state.matches = [];
       errorEl.hidden = false;
@@ -147,7 +152,9 @@ function render() {
   loadingEl.hidden = true;
 
   let list = state.matches;
-  if (state.filter !== "all") list = list.filter(m => matchGroup(m) === state.filter);
+  if (state.filter !== "all") {
+    list = list.filter(m => matchGroup(m) === state.filter);
+  }
 
   emptyEl.hidden = list.length > 0;
   matchesEl.innerHTML = "";
@@ -179,9 +186,10 @@ function render() {
 }
 
 function teamLogo(url, name) {
-  const initial = name.trim().charAt(0);
+  const initial = (name || "?").trim().charAt(0);
   return url
-    ? `<img src="${url}" alt="${name}" loading="lazy" onerror="this.outerHTML='<span class=&quot;team-fallback&quot;>${initial}</span>'">`
+    ? `<img src="${url}" alt="${name}" loading="lazy"
+         onerror="this.outerHTML='<span class=&quot;team-fallback&quot;>${initial}</span>'">`
     : `<span class="team-fallback">${initial}</span>`;
 }
 
@@ -189,16 +197,13 @@ function matchCard(m) {
   const el = document.createElement("article");
   el.className = `match-card group-${matchGroup(m)}`;
 
-  let centerHTML;
   if (matchGroup(m) === "upcoming") {
-    el.dataset.ts = m.timestamp || "";
-    el.classList.add("upcoming");
     el.innerHTML = `
       <div class="teams">
         <div class="team">${teamLogo(m.homeBadge, m.home)}<span>${m.home}</span></div>
         <div class="center">
-          <div class="time">${formatTime(currentDate() + "T" + (m.time || "00:00:00"))}</div>
-          <div class="reltime" data-ts="${m.timestamp || ""}">${m.timestamp ? relativeTime(new Date(m.timestamp).toISOString()) : ""}</div>
+          <div class="time">${formatTime(m.timestamp)}</div>
+          <div class="reltime" data-ts="${m.timestamp || ""}">${relativeTime(m.timestamp)}</div>
         </div>
         <div class="team away">${teamLogo(m.awayBadge, m.away)}<span>${m.away}</span></div>
       </div>`;
@@ -219,11 +224,10 @@ function matchCard(m) {
   return el;
 }
 
-// تحديث الأوقات النسبية كل دقيقة
 function tickRelativeTimes() {
   document.querySelectorAll(".reltime[data-ts]").forEach(el => {
     const ts = Number(el.dataset.ts);
-    if (ts) el.textContent = relativeTime(new Date(ts).toISOString());
+    if (ts) el.textContent = relativeTime(ts);
   });
 }
 
@@ -259,7 +263,9 @@ $("#retryBtn")?.addEventListener("click", load);
 
 function load() {
   loadingEl.hidden = false;
+  errorEl.hidden = true;
   matchesEl.innerHTML = "";
+  emptyEl.hidden = true;
   fetchMatches();
 }
 
@@ -282,19 +288,16 @@ installBtn?.addEventListener("click", async () => {
   installBtn.hidden = true;
 });
 
-// iOS Safari لا يدعم beforeinstallprompt — نعرض تعليمات يدوية
 const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 if (isIOS && !window.navigator.standalone) {
   installIosBtn.hidden = false;
   installIosBtn.addEventListener("click", () => {
-    alert("لإضافة التطبيق على الآيفون:\n1. اضغط زر المشاركة في سفلي المتصفح\n2. اختر «إضافة إلى الشاشة الرئيسية»");
+    alert("لإضافة التطبيق على الآيفون:\n1. اضغط زر المشاركة في أسفل المتصفح\n2. اختر «إضافة إلى الشاشة الرئيسية»");
   });
 }
 
-// إخفاء الزر إذا كان التطبيق مثبتاً بالفعل
 window.addEventListener("appinstalled", () => {
   installBtn.hidden = true;
-  if (window.matchMedia("(display-mode: standalone)").matches) installBtn.hidden = true;
 });
 
 /* ===== التشغيل ===== */
